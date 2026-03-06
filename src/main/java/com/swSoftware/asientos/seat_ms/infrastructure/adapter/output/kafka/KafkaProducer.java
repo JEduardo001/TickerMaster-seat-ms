@@ -1,5 +1,6 @@
 package com.swSoftware.asientos.seat_ms.infrastructure.adapter.output.kafka;
 
+import com.app.events.ReserveEvent;
 import lombok.AllArgsConstructor;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -13,7 +14,7 @@ public class KafkaProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    public void send(String request, String nameTopic, String correlationId) {
+    public void send(ReserveEvent request, String nameTopic, String correlationId) {
         ProducerRecord<String, Object> record = new ProducerRecord<>(nameTopic, request);
         if (correlationId != null) {
             record.headers().add(CORRELATION_HEADER.toString(), correlationId.getBytes());
@@ -22,7 +23,7 @@ public class KafkaProducer {
         kafkaTemplate.send(record);
     }
 
-    public void publisFailedSendEventDlq(String request) {
+    public void publisFailedSendEventDlq(ReserveEvent request) {
         kafkaTemplate.send("dev.seat-ms.failed.send.event.dlq.v1", request);
     }
 

@@ -1,0 +1,32 @@
+{
+  "type": "record",
+  "name": "ReserveEvent",
+  "namespace": "com.app.events",
+  "fields": [
+    {
+      "name": "idCorrelation",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    },
+
+    {
+      "name": "idsSeat",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "logicalType": "uuid"
+        }
+      }
+    },
+    {
+      "name": "idUser",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    }
+  ]
+}
