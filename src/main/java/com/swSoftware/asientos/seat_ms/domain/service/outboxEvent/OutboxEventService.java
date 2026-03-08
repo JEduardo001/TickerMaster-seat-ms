@@ -2,6 +2,7 @@ package com.swSoftware.asientos.seat_ms.domain.service.outboxEvent;
 
 
 import com.app.events.ReserveEvent;
+import com.app.events.ReservedSeatEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.swSoftware.asientos.seat_ms.domain.model.OutboxEventModel;
 import com.swSoftware.asientos.seat_ms.domain.port.IOutboxEventService;
@@ -50,7 +51,7 @@ public class OutboxEventService<T> implements IOutboxEventService<T> {
 
         for (OutboxEventModel e : events) {
             try {
-                ReserveEvent event = objectMapper.readValue(e.getPayload(), ReserveEvent.class);
+                ReservedSeatEvent event = objectMapper.readValue(e.getPayload(), ReservedSeatEvent.class);
 
                 kafkaProducer.send(event,e.getNameTopic(), e.getCorrelationId());
                 e.setStatus(StatusEvent.SENT);
@@ -62,7 +63,7 @@ public class OutboxEventService<T> implements IOutboxEventService<T> {
                 e.setRetryCount(e.getRetryCount() + 1);
                 if (e.getRetryCount() > 20) {
                     try{
-                        ReserveEvent event = objectMapper.readValue(e.getPayload(), ReserveEvent.class);
+                        ReservedSeatEvent event = objectMapper.readValue(e.getPayload(), ReservedSeatEvent.class);
                         e.setStatus(StatusEvent.FAILED);
                         kafkaProducer.publisFailedSendEventDlq(event);
                     }catch (Exception exc){

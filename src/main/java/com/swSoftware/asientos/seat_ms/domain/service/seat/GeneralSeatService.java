@@ -1,6 +1,8 @@
 package com.swSoftware.asientos.seat_ms.domain.service.seat;
 
 import com.app.events.ReserveEvent;
+import com.app.events.ReservedSeatEvent;
+import com.app.events.SeatReservedDetail;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.swSoftware.asientos.seat_ms.domain.model.EventProcessedModel;
 import com.swSoftware.asientos.seat_ms.domain.model.SeatModel;
@@ -32,7 +34,7 @@ public class GeneralSeatService implements ISeatService {
     private final IOutboxEventService iOutboxEventService;
     private final String topicReservedSeats = "dev.seat-ms.reserved-seats.v1";
 
-    private void saveOutboxEvent(ReserveEvent request, String topic){
+    private void saveOutboxEvent(ReservedSeatEvent request, String topic){
         iOutboxEventService.saveEvent(request,topic);
 
     }
@@ -48,7 +50,6 @@ public class GeneralSeatService implements ISeatService {
 
     @Override
     @Transactional()
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
     public void reserveSeat(ReserveEvent request) {
 
         if(iEventProcessedService.eventAlreadyProcessed(request.getIdCorrelation())){
@@ -56,7 +57,7 @@ public class GeneralSeatService implements ISeatService {
             return;
         }
 
-        List<SeatModel> seatToReserve = seatRepository.findAllById(request.getIdsSeat());
+        List<SeatModel> seatToReserve = seatRepository.findAllByIdWithLock(request.getIdsSeat());
 
         if(seatToReserve.size() < request.getIdsSeat().size()){
             log.warn(MESSAGE_SEAT_NOT_FOUND_FOR_RESERVE.toString(), request.getIdsSeat().toString());
@@ -75,13 +76,27 @@ public class GeneralSeatService implements ISeatService {
             saveEventProcessed(request);
             return;
         }
+        //creation of list of details reserved seat
+        List<SeatReservedDetail> seatsReserved = seatToReserve.stream().peek(s -> s.setStatus(StatusSeat.BUSY))
+                .map(s -> SeatReservedDetail.newBuilder()
+                        .setIdSeat(s.getId())
+                        .setSeatNumber(s.getSeatNumber())
+                        .setSection(s.getSection().toString())
+                        .setStatus(s.getStatus().toString())
+                        .build()).collect(Collectors.toList());
 
-        seatToReserve.stream().forEach(s -> s.setStatus(StatusSeat.BUSY));
+        //creation of final event for reserved seating
+        ReservedSeatEvent reservedSeatEvent = ReservedSeatEvent.newBuilder()
+                .setIdUser(request.getIdUser())
+                .setIdCorrelation(request.getIdCorrelation())
+                .setSeats(seatsReserved)
+                .build();
+
 
         seatRepository.saveAll(seatToReserve);
         log.info(MESSAGE_SEATS_RESERVED.toString());
 
-        saveOutboxEvent(request,topicReservedSeats);
+        saveOutboxEvent(reservedSeatEvent,topicReservedSeats);
         saveEventProcessed(request);
     }
 }

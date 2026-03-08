@@ -1,0 +1,58 @@
+{
+  "type": "record",
+  "name": "ReservedSeatEvent",
+  "namespace": "com.app.events",
+  "fields": [
+    {
+      "name": "idCorrelation",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    },
+
+    {
+      "name": "seats",
+      "default": [],
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "SeatReservedDetail",
+          "fields": [
+            {
+              "name": "idSeat",
+              "type": {
+                "type": "string",
+                "logicalType": "uuid"
+              }
+            },
+            {
+              "name": "section",
+              "type": "string"
+            },
+            {
+              "name": "seatNumber",
+              "type": "int"
+            },
+            {
+              "name": "status",
+              "type": "string"
+            }
+
+
+          ]
+        }
+      }
+    },
+
+
+    {
+      "name": "idUser",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    }
+  ]
+}
